@@ -32,7 +32,7 @@ jobs:
           python main.py --all
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: analysis-output
           path: |
