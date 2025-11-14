@@ -1,4 +1,4 @@
-"""
+
 # Google Reviews Sentiment Analysis with Transformers
 
 Advanced sentiment analysis system using state-of-the-art Transformer models to analyze Google Maps reviews.
