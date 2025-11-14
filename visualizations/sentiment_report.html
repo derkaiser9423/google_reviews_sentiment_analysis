@@ -1,0 +1,295 @@
+import React, { useState } from 'react';
+import { Upload, TrendingUp, TrendingDown, Minus, BarChart3, MessageSquare } from 'lucide-react';
+
+export default function SentimentAnalyzer() {
+  const [reviews, setReviews] = useState([]);
+  const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Simple sentiment analysis function
+  const analyzeSentiment = (text) => {
+    const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best', 'wonderful', 
+      'fantastic', 'awesome', 'perfect', 'happy', 'satisfied', 'recommend', 'helpful', 'friendly',
+      'clean', 'quality', 'fast', 'professional', 'beautiful'];
+    
+    const negativeWords = ['bad', 'terrible', 'horrible', 'worst', 'hate', 'poor', 'awful',
+      'disappointing', 'rude', 'slow', 'dirty', 'expensive', 'waste', 'never', 'avoid',
+      'unprofessional', 'broken', 'issue', 'problem', 'complaint'];
+
+    const lowerText = text.toLowerCase();
+    let score = 0;
+    let positiveCount = 0;
+    let negativeCount = 0;
+
+    positiveWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'g');
+      const matches = lowerText.match(regex);
+      if (matches) {
+        positiveCount += matches.length;
+        score += matches.length;
+      }
+    });
+
+    negativeWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'g');
+      const matches = lowerText.match(regex);
+      if (matches) {
+        negativeCount += matches.length;
+        score -= matches.length;
+      }
+    });
+
+    const category = score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral';
+    
+    return { score, category, positiveCount, negativeCount };
+  };
+
+  const extractThemes = (reviewTexts) => {
+    const themes = {
+      service: ['service', 'staff', 'employee', 'help', 'friendly', 'rude', 'helpful'],
+      quality: ['quality', 'product', 'good', 'bad', 'excellent', 'poor'],
+      price: ['price', 'expensive', 'cheap', 'value', 'cost', 'money'],
+      cleanliness: ['clean', 'dirty', 'messy', 'tidy', 'organized'],
+      speed: ['fast', 'slow', 'quick', 'wait', 'waiting', 'time'],
+      location: ['location', 'parking', 'access', 'convenient', 'easy to find']
+    };
+
+    const themeCounts = {};
+    const themeExamples = {};
+
+    Object.keys(themes).forEach(theme => {
+      themeCounts[theme] = 0;
+      themeExamples[theme] = [];
+    });
+
+    reviewTexts.forEach((review, idx) => {
+      const text = review.toLowerCase();
+      Object.keys(themes).forEach(theme => {
+        themes[theme].forEach(keyword => {
+          if (text.includes(keyword)) {
+            themeCounts[theme]++;
+            if (themeExamples[theme].length < 2) {
+              themeExamples[theme].push({ text: reviewTexts[idx].slice(0, 100), index: idx });
+            }
+          }
+        });
+      });
+    });
+
+    return { themeCounts, themeExamples };
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const text = event.target.result;
+      let parsedReviews = [];
+
+      if (file.name.endsWith('.csv')) {
+        const lines = text.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        
+        for (let i = 1; i < lines.length; i++) {
+          if (lines[i].trim()) {
+            const values = lines[i].split(',');
+            const reviewText = values[headers.indexOf('review') >= 0 ? headers.indexOf('review') : 
+                                     headers.indexOf('text') >= 0 ? headers.indexOf('text') : 0];
+            if (reviewText && reviewText.trim()) {
+              parsedReviews.push(reviewText.trim());
+            }
+          }
+        }
+      } else {
+        parsedReviews = text.split('\n').filter(line => line.trim().length > 10);
+      }
+
+      processReviews(parsedReviews);
+    };
+
+    reader.readAsText(file);
+  };
+
+  const handleTextInput = (e) => {
+    const text = e.target.value;
+    if (text.trim()) {
+      const reviewLines = text.split('\n').filter(line => line.trim().length > 10);
+      processReviews(reviewLines);
+    }
+  };
+
+  const processReviews = (reviewTexts) => {
+    const analyzed = reviewTexts.map((text, idx) => ({
+      id: idx,
+      text,
+      ...analyzeSentiment(text)
+    }));
+
+    const sentimentCounts = {
+      positive: analyzed.filter(r => r.category === 'positive').length,
+      negative: analyzed.filter(r => r.category === 'negative').length,
+      neutral: analyzed.filter(r => r.category === 'neutral').length
+    };
+
+    const { themeCounts, themeExamples } = extractThemes(reviewTexts);
+
+    setReviews(analyzed);
+    setAnalysis({
+      total: analyzed.length,
+      sentimentCounts,
+      themeCounts,
+      themeExamples,
+      avgScore: analyzed.reduce((sum, r) => sum + r.score, 0) / analyzed.length
+    });
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+            <BarChart3 className="text-indigo-600" />
+            Review Sentiment Analyzer
+          </h1>
+          <p className="text-gray-600 mb-6">No API required - analyze your reviews offline</p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload CSV or Text File
+              </label>
+              <input
+                type="file"
+                accept=".csv,.txt"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+              <p className="text-xs text-gray-500 mt-1">CSV should have a 'review' or 'text' column</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Or Paste Reviews (one per line)
+              </label>
+              <textarea
+                onChange={(e) => handleTextInput(e)}
+                placeholder="Paste your reviews here, one per line..."
+                className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {loading && (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Analyzing reviews...</p>
+          </div>
+        )}
+
+        {analysis && !loading && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Total Reviews</p>
+                    <p className="text-3xl font-bold text-gray-800">{analysis.total}</p>
+                  </div>
+                  <MessageSquare className="text-indigo-600" size={32} />
+                </div>
+              </div>
+
+              <div className="bg-green-50 rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-700 text-sm font-medium">Positive</p>
+                    <p className="text-3xl font-bold text-green-800">{analysis.sentimentCounts.positive}</p>
+                    <p className="text-xs text-green-600">
+                      {((analysis.sentimentCounts.positive / analysis.total) * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                  <TrendingUp className="text-green-600" size={32} />
+                </div>
+              </div>
+
+              <div className="bg-red-50 rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-red-700 text-sm font-medium">Negative</p>
+                    <p className="text-3xl font-bold text-red-800">{analysis.sentimentCounts.negative}</p>
+                    <p className="text-xs text-red-600">
+                      {((analysis.sentimentCounts.negative / analysis.total) * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                  <TrendingDown className="text-red-600" size={32} />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Common Themes</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries(analysis.themeCounts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([theme, count]) => (
+                    <div key={theme} className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 capitalize">{theme}</p>
+                      <p className="text-2xl font-bold text-indigo-600">{count}</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div
+                          className="bg-indigo-600 h-2 rounded-full"
+                          style={{ width: `${(count / analysis.total) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Review Details</h2>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {reviews.map((review) => (
+                  <div
+                    key={review.id}
+                    className={`p-4 rounded-lg border-l-4 ${
+                      review.category === 'positive'
+                        ? 'bg-green-50 border-green-500'
+                        : review.category === 'negative'
+                        ? 'bg-red-50 border-red-500'
+                        : 'bg-gray-50 border-gray-400'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span
+                        className={`text-xs font-semibold px-2 py-1 rounded ${
+                          review.category === 'positive'
+                            ? 'bg-green-200 text-green-800'
+                            : review.category === 'negative'
+                            ? 'bg-red-200 text-red-800'
+                            : 'bg-gray-200 text-gray-800'
+                        }`}
+                      >
+                        {review.category.toUpperCase()}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Score: {review.score > 0 ? '+' : ''}{review.score}
+                      </span>
+                    </div>
+                    <p className="text-gray-700 text-sm">{review.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
