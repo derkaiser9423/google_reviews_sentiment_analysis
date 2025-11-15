@@ -3,7 +3,7 @@ name: Daily Review Analysis
 on:
   schedule:
     # Run every day at 2 AM UTC (adjust timezone as needed)
-    - cron: '0 2 * * *'
+    - cron: '0 */6 * * *' 
   
   # Allow manual trigger
   workflow_dispatch:
