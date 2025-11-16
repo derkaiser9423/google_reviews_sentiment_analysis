@@ -1,0 +1,17 @@
+
+API USAGE SUMMARY
+=================
+Start Date: 2025-11-16
+Days Elapsed: 1 / 90
+Total Cost: $0.02 / $450.00
+Remaining Budget: $449.98
+Days Remaining: 89
+
+Average Daily Cost: $0.02
+Projected Total Cost: $1.53
+
+NOTE: Current usage rate is very conservative. 
+To utilize more budget, consider:
+- Adding multiple store locations
+- Increasing fetch frequency
+- Adding other Google APIs

@@ -1,0 +1,12 @@
+{
+  "start_date": "2025-11-16T02:05:13.488846",
+  "budget": 450,
+  "days_total": 90,
+  "daily_calls": [
+    {
+      "date": "2025-11-16T02:05:13.488855",
+      "requests": 1,
+      "estimated_cost": 0.017
+    }
+  ]
+}
