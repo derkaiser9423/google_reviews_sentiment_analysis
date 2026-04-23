@@ -2,10 +2,10 @@
 API USAGE SUMMARY
 =================
 Start Date: 2025-11-16
-Days Elapsed: 158 / 90
-Total Cost: $2.69 / $450.00
-Remaining Budget: $447.31
-Days Remaining: -68
+Days Elapsed: 159 / 90
+Total Cost: $2.70 / $450.00
+Remaining Budget: $447.30
+Days Remaining: -69
 
 Average Daily Cost: $0.02
 Projected Total Cost: $1.53
